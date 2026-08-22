@@ -1,0 +1,30 @@
+name: Install MBC ERP Project
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract project ZIP
+        run: |
+          unzip -o MBC-ERP-Android-GitHub-Actions-Ready.zip -d /tmp/mbc
+          cp -a /tmp/mbc/MBC-ERP-Android/. .
+          rm -rf /tmp/mbc
+          rm -f MBC-ERP-Android-GitHub-Actions-Ready.zip
+
+      - name: Commit project to root
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Install MBC ERP Android project" || echo "Nothing to commit"
+          git push
