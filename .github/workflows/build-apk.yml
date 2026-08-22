@@ -1,48 +1,20 @@
-name: Build MBC ERP APK
-
-on:
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.7'
-
-      - name: Extract MBC ERP ZIP
+  - name: Find and Extract MBC ERP ZIP
         run: |
-          unzip -q MBC-ERP-Android-GitHub-Actions-Ready.zip -d extracted
+          ZIP_FILE=$(find . -maxdepth 2 -type f -iname "*.zip" | head -n 1)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: No ZIP file found in repository."
+            echo "Repository files:"
+            find . -maxdepth 3 -type f | sort
+            exit 1
+          fi
+
+          echo "Found ZIP: $ZIP_FILE"
+          mkdir -p extracted
+          unzip -q "$ZIP_FILE" -d extracted
+
+          echo "Extracted files:"
+          find extracted -maxdepth 3 -type f | sort
+
           test -f extracted/MBC-ERP-Android/settings.gradle.kts
           echo "Project found successfully."
-
-      - name: Run unit tests
-        working-directory: extracted/MBC-ERP-Android
-        run: gradle test --no-daemon --stacktrace
-
-      - name: Build Debug APK
-        working-directory: extracted/MBC-ERP-Android
-        run: gradle assembleDebug --no-daemon --stacktrace
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: MBC-ERP-debug-APK
-          path: extracted/MBC-ERP-Android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 14
